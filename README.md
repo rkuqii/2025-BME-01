@@ -7,6 +7,10 @@
 ## 3. Tools and Methods
 ## 4. Files
 
+# Overview
+
+
+
 # Goals
   1. Characterize Genetic Variation
      - Identify how genetic variations near the CPR (Centromeric Proximal Region), specifically the genetic variations of the TRIM family gene, vary across differnet human populations and then link the genetic variants to different geographic regions
