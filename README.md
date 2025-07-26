@@ -1,4 +1,4 @@
-# TRIM Gene family near the CPR analysis
+# TRIM family genes near the CPR analysis
  My question: How do TRIM family genes near the centromere (CPRs) vary across human populations, and do any of these variations relate to ancient haplotypes (cenhaps) or known disease associations?
 
 # Table of Content
@@ -8,7 +8,7 @@
 ## 4. Files
 
 # Overview
-
+This project analyzes how TRIM family genes near the Centromeric Proximal Regions (CPRs) vary across human populations and aims to associate distinct genetic variants within these regions with ancient haplotypes, known genetic diseases or known traits that can result in genetic diseases. Additionally, this project also aims to visualize the data found with clear tables, graphs, histograms and pictures that will link the genetic variants to certain geographic regions.
 
 
 # Goals
@@ -20,3 +20,6 @@
      - See whether these TRIM family gene variants are the cause factors to known diseases or associated with traits that can result in those diseases
   4. Visualize the data
      - Visualize the patterns of the genetic variants, compare the visualizations and make the associations through the data visualizations
+
+# Tools and Methods
+# Files
