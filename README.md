@@ -14,3 +14,5 @@
      - Determine whether these genetic variations are linked to ancient centromere haplotypes (Cenhaps) by looking at population structure and evolutionary history
   3. Explore disease association
      - See whether these TRIM family gene variants are the cause factors to known diseases or associated with traits that can result in those diseases
+  4. Visualize the data
+     - Visualize the patterns of the genetic variants, compare the visualizations and make the associations through the data visualizations
