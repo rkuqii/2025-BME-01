@@ -1,0 +1,309 @@
+# 28/07/2025
+
+from Bio import SeqIO
+import pandas as pd
+
+def get_fasta_start_coordinate(header):
+    # Given a header like "HG01081#2#CM088588.1:55441978-55450939"
+    # Return the integer start coordinate (e.g. 55441978)
+    coord_str = header.split(":")[-1]
+    start_str = coord_str.split("-")[0]
+    return int(start_str)
+
+# === File paths ===
+fasta_file = "chr11_TRIM48_intervals.fa"
+bed_file = "chr11_TRIM48_intervals.bed"
+gff_file = "chr11_TRIM48.gff"
+
+#def get_fasta_start_coordinate(header):
+    # Given a header like "HG01081#2#CM088588.1:55441978-55450939"
+    # Return the integer start coordinate (e.g. 55441978)
+#   coord_str = header.split(":")[-1]
+ #   start_str = coord_str.split("-")[0]
+  #  return int(start_str)
+
+
+# define our fasta parser function
+def parse_fasta_manual(filepath):
+    #fasta sequences will exist as a dictionary 
+    sequences = {}
+    current_header = None
+    with open(filepath, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue  # Skip empty lines
+            if line.startswith('>'):
+                current_header = line[1:]  # Remove '>'
+                sequences[current_header] = []
+            elif current_header:
+                sequences[current_header].append(line)
+    return {header: "".join(seq_parts) for header, seq_parts in sequences.items()}
+
+
+
+# === Step 1: Read FASTA into a dictionary ===
+fasta_dict = parse_fasta_manual(fasta_file)
+first_header = list(fasta_dict.keys())[0]
+start_of_fasta = get_fasta_start_coordinate(first_header)
+#fasta_dict = parse_fasta_manual(fasta_file)
+#print(fasta_dict.keys())
+print("[INFO] FASTA headers loaded:", list(fasta_dict.keys()))
+
+# === Step 2: Read BED file ===
+bed_intervals = []
+with open(bed_file, "r") as bed:
+    for line in bed:
+        if line.strip() == "" or line.startswith("#"):
+            continue
+        parts = line.strip().split()
+        chrom = parts[0]
+        start = int(parts[1])
+        end = int(parts[2])
+        bed_intervals.append((chrom, start, end))
+
+# Normalize BED chromosome names (optional, keep as is if already matching)
+def normalize_chrom_name(chrom_name):
+    return chrom_name.strip()
+
+bed_intervals = [(normalize_chrom_name(chrom), start, end) for chrom, start, end in bed_intervals]
+
+
+#print(bed_intervals)
+print("[INFO] BED intervals loaded:", bed_intervals)
+
+# Let's assume fasta_dict keys are like 'HG01081#2#CM088588.1:55441978-55450939'
+
+extracted_sequences = {}
+
+for chrom, bed_start, bed_end in bed_intervals:
+    matching_header = None
+    for header in fasta_dict:
+        header_prefix = header.split(":")[0]
+        if chrom == header_prefix:
+            matching_header = header
+            break
+
+    if matching_header is None:
+        print(f"[WARNING] No matching FASTA sequence found for interval {chrom}:{bed_start}-{bed_end}")
+        continue
+    
+    # Calculate relative coordinates inside the FASTA sequence
+    rel_start = bed_start - start_of_fasta
+    rel_end = bed_end - start_of_fasta
+    
+    # Extract subsequence
+    seq = fasta_dict[matching_header][rel_start:rel_end]
+    key = f"{chrom}:{bed_start}-{bed_end}"
+    extracted_sequences[key] = seq
+
+# Print extracted sequences
+for k, seq in extracted_sequences.items():
+    print(f">{k}\n{seq}")
+
+# === Step 3: Read GFF file ===
+
+colnames = ["seqid", "source", "type", "start", "end", "score", "strand", "phase", "attributes"]
+gff_df = pd.read_csv(gff_file, sep="\t", comment="#", names=colnames)
+
+# before we can extract the sequences in step 4 - we need to transform the coordinates in the gff file so that they are 
+# within the coordinates of our input fasta 
+# for gff_df you need to subtract the starting coordinate from the bed intervals file 
+#start_of_fasta = 55441978
+
+# Get start coordinate dynamically from the first fasta header
+first_header = list(fasta_dict.keys())[0]
+start_of_fasta = get_fasta_start_coordinate(first_header)
+gff_df['start'] = gff_df['start'] - start_of_fasta
+gff_df['end'] = gff_df['end'] - start_of_fasta
+print("[INFO] GFF adjusted based on fasta start")
+
+# === Step 4: Extract sequences ===
+extracted_sequences = {}
+
+for chrom, bed_start, bed_end in bed_intervals:
+    # Build header (e.g., CM088588.1:55441978-55450939)
+    matching_header = None
+    for header in fasta_dict:
+        if header.startswith(chrom):
+            matching_header = header
+            break
+    if not matching_header:
+        print(f"[WARNING] No matching header in FASTA for {chrom}")
+        continue
+
+    sequence = fasta_dict[matching_header]
+    relative_start = bed_start - start_of_fasta
+    relative_end = bed_end - start_of_fasta
+
+    if relative_start < 0 or relative_end > len(sequence):
+        print(f"[WARNING] Interval out of bounds for {chrom}: {relative_start}-{relative_end}")
+        continue
+
+    subseq = sequence[relative_start:relative_end]
+    key = f"{matching_header}:{bed_start}-{bed_end}"
+    extracted_sequences[key] = subseq
+
+# === Output the results ===
+for key, seq in extracted_sequences.items():
+    print(f">{key}\n{seq}")
+
+# === Step 4: Extract sequences ===
+extracted_sequences = {}
+
+for header in fasta_dict:
+    matching_header = None
+#for chrom, bed_start, bed_end in bed_intervals:
+ #   matching_header = None
+   for header in fasta_dict:
+      if header.startswith(chrom):
+         matching_header = header
+           break
+
+for seqid, start, end in 'bed_entries':
+    #Find the full fasta header that matches this seqid
+   fasta_id = next((k for k in 'fasta_sequences' if k.startswith(seqid)), None)
+    if fasta_id:
+         #Extract start of sequence from fasta header
+        coord_info = fasta_id.split(":")[-1]
+       fasta_start = int(coord_info.split("-")[0])
+        
+         #Adjust coordinates
+        relative_start = start - fasta_start
+        relative_end = end - fasta_start
+
+        # Get sequence and slice it
+        full_sequence = str(fasta_sequences[fasta_id].seq)
+        subseq = full_sequence[relative_start:relative_end]
+        
+        # Store with a key that includes all info
+        key = f"{fasta_id}:{start}-{end}"
+        results[key] = subseq
+    else:
+        print(f"[WARNING] No matching FASTA sequence found for: {seqid}")
+
+for chrom, bed_start, bed_end in bed_intervals:
+    header=str(chrom + ":" + str('bed_start') + "-" + str('bed_end'))
+    if header not in fasta_dict:
+        print(f"Warning: {chrom} not found in FASTA")
+        continue
+    sequence = fasta_dict[header][bed_start:bed_end]
+    key = f"{header}:{bed_start}-{bed_end}"
+    extracted_sequences[key] = str(sequence)
+
+print('extracted_sequences')
+
+# OPTIONAL: Save extracted sequences to a new FASTA file
+with open("extracted_sequences.fa", "w") as out_fa:
+     for key, seq in extracted_sequences.items():
+        out_fa.write(f">{key}\n{seq}\n")
+
+# === Step 5: Adjust GFF coordinates ===
+ adjusted_gff = []
+
+ for chrom, bed_start, bed_end in bed_intervals:
+      gff_sub = gff_df[(gff_df["seqid"] == chrom) &
+                       (gff_df["start"] >= bed_start) &
+                       (gff_df["end"] <= bed_end)].copy()
+      gff_sub["adjusted_start"] = gff_sub["start"] - bed_start
+      gff_sub["adjusted_end"] = gff_sub["end"] - bed_start
+      gff_sub["interval"] = f"{chrom}:{bed_start}-{bed_end}"
+      adjusted_gff.append(gff_sub)
+
+ adjusted_gff_df = pd.concat(adjusted_gff)
+ adjusted_gff_df.to_csv("adjusted_gff.csv", index=False)
+
+Unfortunately, it was mostly wrong so now I am working on editing this function and making it better.
+
+
+# 29/07/2025
+
+# === File paths ===
+fasta_file = "chr11_TRIM48_intervals.fa"
+bed_file = "chr11_TRIM48_intervals.bed"
+gff_file = "chr11_TRIM48.gff"
+
+
+# define our fasta parser function
+def parse_fasta_manual(filepath):
+    #fasta sequences will exist as a dictionary 
+    sequences = {}
+    current_header = None
+    with open(filepath, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue  # Skip empty lines
+            if line.startswith('>'):
+                current_header = line[1:]  # Remove '>'
+                sequences[current_header] = []
+            elif current_header:
+                sequences[current_header].append(line)
+    return {header: "".join(seq_parts) for header, seq_parts in sequences.items()}
+
+
+# === Step 1: Read FASTA into a dictionary ===
+fasta_dict = parse_fasta_manual(fasta_file)
+first_header = list(fasta_dict.keys())[0]
+# print("[INFO] FASTA headers loaded:", list(fasta_dict.keys()))
+
+cleaned_dict = {}
+
+for header in fasta_dict:
+    # Split header like "HG01081#2#CM088588.1:55441978-55450939"
+    print(header)
+    try:
+        parts = header.strip().split(":")
+        chrom_info = parts[0]  # "HG01081#2#CM088588.1 <- we want this part, not this -> :55441978-55450939"
+        cleaned_dict[chrom_info] = fasta_dict[header]
+    except Exception as e:
+        print(f"Error parsing header: {header} -> {e}")
+        continue
+# print("[INFO] FASTA headers loaded:", list(cleaned_dict.keys()))
+
+# === Step 2: Read BED file ===
+bed_intervals = []
+with open(bed_file, "r") as bed:
+    for line in bed:
+        if line.strip() == "" or line.startswith("#"):
+            continue
+        parts = line.strip().split()
+        chrom = parts[0]
+        start = int(parts[1])
+        end = int(parts[2])
+        bed_intervals.append((chrom, start, end))
+
+# Normalize BED chromosome names (optional, keep as is if already matching)
+def normalize_chrom_name(chrom_name):
+    return chrom_name.strip()
+
+bed_intervals = [(normalize_chrom_name(chrom), start, end) for chrom, start, end in bed_intervals]
+
+
+#print(bed_intervals)
+print("[INFO] BED intervals loaded:", bed_intervals)
+
+# Let's assume fasta_dict keys are like 'HG01081#2#CM088588.1:55441978-55450939'
+extracted_sequences = {}
+
+for chrom, bed_start, bed_end in bed_intervals:
+    matching_header = None
+    for header in fasta_dict:
+        header_prefix = header.split(":")[0]
+        if chrom == header_prefix:
+            matching_header = header
+            break
+
+    if matching_header is None:
+        print(f"[WARNING] No matching FASTA sequence found for interval {chrom}:{bed_start}-{bed_end}")
+        continue
+    
+# Calculate relative coordinates inside the FASTA sequence
+    rel_start = bed_start
+    rel_end = bed_end   
+# print(rel_start)
+
+    # Extract subsequence
+    seq = fasta_dict[matching_header][rel_start:rel_end]
+    key = f"{chrom}:{bed_start}-{bed_end}"
+    extracted_sequences[key] = seq
