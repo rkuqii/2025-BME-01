@@ -360,3 +360,7 @@ for idx, row in subset_df.iterrows():
 print("[INFO] Extracted exon 1 sequences:")
 for sample_id, exon_seq in exon1_dict.items():
     print(f">{sample_id}\n{exon_seq}")
+
+Basically, what I have to do is measure the lengths of every exon that are found in the gff file, then figure out the full gene lenth. Then, after I figure out the
+gene lengths and the exons lengths I have to see if the exons lengths add up to the full genes lengths, if they do then it is okay, but if they don't add up to
+that full genes lengths then it is a problem with the annotation of the genes.
