@@ -292,3 +292,71 @@ print(gff_df)
 
 subset_df = gff_df[gff_df["attributes"].str.contains("exon_number=1") & (gff_df['type'] == 'exon') & (gff_df['source'] == 'CAT')]
 print(subset_df)
+
+
+
+
+# 30/07/2025
+
+So, after i extracted the exon sequences I can do two things: create a new fasta file with them and plug it into galaxy or I can try using python to align these
+sequences and compare them by variants. I will try the first option and I want to do that using some steps.
+
+#  === Step 1 ===  #
+Loop through your dictionary of extract exon sequences
+#  === Step 2 ===  #
+Write each sequence to anew file in fasta format (Dictionary {Key:Value})
+#  === Step 3 ===  #
+The result of these two steps should be a fasta file called maybe "finalexon1.fasta"| >Key | Value 
+After I get that final file I am supposed to plug this new file into galaxy and since galaxy to extract variants uses the first row of your file, it is reccommended
+for me to duplicate a row and use that row as a reference, in order to find out what the varinats in these exons are.
+
+
+Basically, what I am thinking of doing first is save my exons into a separate file, then make a dictionary out of that file.
+
+# Coding
+
+subset_df = gff_df[gff_df["attributes"].str.contains("exon_number=1") & (gff_df['type'] == 'exon') & (gff_df['source'] == 'CAT')]
+print(subset_df)
+
+# subset_df.to_csv("filtered_exons.gff", sep="\t", header=False, index=False)
+# print(subset_df.head())
+
+# This is where the actual coding starts for step 1 starts
+
+# exon1_dict = {}
+# with open(fasta_file, "r") as fasta:
+#     for line in fasta:
+#          if line.strip() == "" or line.startswith("#"):
+#             continue
+#     parts = line.strip().split()
+#     chrom = parts[0].strip()
+#     start = parts[0]
+#     cleaned_dict[chrom] = start
+# print(exon1_dict)
+
+# for idx, row in exon1_dict: 
+#  sample = row[chrom]
+# gene_seq = fasta_dict[sample]
+# start = row['start']
+# stop = row['stop']
+# exon1_dict[sample] = gene_seq[start:stop]
+
+exon1_dict = {}
+
+for idx, row in subset_df.iterrows():
+    chrom = row['seqid']              # e.g., 'HG01081#2#CM088588.1'
+    start = int(row['start'])         # adjusted coordinates
+    end = int(row['end'])
+
+    if chrom not in cleaned_dict:
+        print(f"[WARNING] {chrom} not found in cleaned_dict")
+        continue
+
+    full_seq = cleaned_dict[chrom]    # full FASTA sequence
+    exon_seq = full_seq[start:end]    # extract exon 1 sequence
+
+    exon1_dict[chrom] = exon_seq      # store in the exon1_dict
+
+print("[INFO] Extracted exon 1 sequences:")
+for sample_id, exon_seq in exon1_dict.items():
+    print(f">{sample_id}\n{exon_seq}")
